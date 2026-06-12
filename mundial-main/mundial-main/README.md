@@ -6,7 +6,7 @@
 
 ## Contexto
 
-Modificacion de laia?
+Modificacion de laia 2
 
 Se os proporciona el código fuente de una API REST desarrollada con **Spring Boot 3** y **Java 21** sobre el Mundial de Fútbol 2026. La aplicación expone los siguientes endpoints:
 
