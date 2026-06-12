@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="'Selección de ' + ${pais}">Selección</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --gold: #f0c040; --card-bg: rgba(10,46,26,0.88); --border: rgba(255,255,255,0.15); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; font-family: 'Barlow', sans-serif; color: #fff; background: #0a3d1f; position: relative; overflow-x: hidden; }
+
+    .field-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: linear-gradient(180deg, #0a3d1f 0%, #0d4f28 50%, #0a3d1f 100%);
+    }
+    .field-bg::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(180deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 40px, transparent 40px, transparent 80px);
+    }
+    .flags { position: absolute; inset: 0; pointer-events: none; }
+    .flag { position: absolute; font-size: 3rem; opacity: 0.12; animation: floatFlag linear infinite; user-select: none; }
+    @keyframes floatFlag {
+      0%   { transform: translateY(110vh) rotate(-8deg); opacity: 0; }
+      10%  { opacity: 0.12; }
+      90%  { opacity: 0.12; }
+      100% { transform: translateY(-15vh) rotate(8deg); opacity: 0; }
+    }
+
+    .content { position: relative; z-index: 1; }
+
+    header {
+      text-align: center; padding: 3rem 1rem 2rem;
+      background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(2px);
+    }
+    header h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem,6vw,5rem); letter-spacing: .08em; color: var(--gold); text-shadow: 0 0 30px rgba(240,192,64,0.4), 0 4px 8px rgba(0,0,0,0.8); }
+    header p { color: rgba(255,255,255,0.5); font-size: .85rem; letter-spacing: .15em; text-transform: uppercase; margin-top: .4rem; }
+
+    .nav { text-align: center; padding: 1rem; }
+    .nav a { color: var(--gold); text-decoration: none; font-size: .85rem; letter-spacing: .1em; text-transform: uppercase; border: 1px solid rgba(240,192,64,0.3); padding: .4rem 1rem; border-radius: 4px; background: rgba(10,46,26,0.6); backdrop-filter: blur(4px); }
+    .nav a:hover { border-color: var(--gold); background: rgba(45,138,80,0.3); }
+
+    .filtros { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; padding: 1.5rem 1rem .5rem; }
+    .filtro-btn { background: var(--card-bg); border: 1px solid var(--border); color: rgba(255,255,255,0.6); padding: .35rem .9rem; border-radius: 20px; cursor: pointer; font-family: 'Barlow', sans-serif; font-size: .8rem; letter-spacing: .05em; transition: all .2s; backdrop-filter: blur(6px); }
+    .filtro-btn:hover, .filtro-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(240,192,64,0.12); }
+
+    .empty { text-align: center; padding: 5rem; color: rgba(255,255,255,0.3); font-size: 1.2rem; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px,1fr)); gap: 1.5rem; padding: 2rem; max-width: 1300px; margin: 0 auto; }
+
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform .2s, border-color .2s; backdrop-filter: blur(8px); }
+    .card:hover { transform: translateY(-6px); border-color: var(--gold); }
+
+    .card-avatar { width: 100%; height: 190px; background: linear-gradient(135deg, rgba(0,60,20,0.9), rgba(5,40,15,0.95)); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .card-avatar::before { content: ''; position: absolute; width: 110px; height: 110px; border-radius: 50%; border: 2px solid rgba(240,192,64,0.12); background: rgba(240,192,64,0.04); }
+    .card-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: none; position: absolute; inset: 0; }
+    .card-avatar img.loaded { display: block; }
+    .card-dorsal-big { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; color: rgba(240,192,64,0.3); line-height: 1; position: absolute; }
+
+    .card-body { padding: .9rem 1rem; border-top: 2px solid var(--gold); }
+    .card-header-row { display: flex; align-items: baseline; justify-content: space-between; gap: .4rem; }
+    .card-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: .04em; line-height: 1.2; }
+    .card-num { font-family: 'Bebas Neue', sans-serif; font-size: .95rem; color: var(--gold); opacity: .7; }
+    .card-pos { font-size: .7rem; color: var(--gold); text-transform: uppercase; letter-spacing: .12em; margin-top: .3rem; }
+
+    footer { text-align: center; padding: 2rem; color: rgba(255,255,255,0.15); font-size: .8rem; letter-spacing: .1em; }
+  </style>
+</head>
+<body>
+  <div class="field-bg">
+    <div class="flags" id="flags"></div>
+  </div>
+
+  <div class="content">
+    <header>
+      <h1 th:text="${pais}">País</h1>
+      <p>Mundial 2026 · Convocatoria oficial</p>
+    </header>
+    <div class="nav"><a href="/">← Volver al inicio</a></div>
+
+    <div class="filtros">
+      <button class="filtro-btn active" onclick="filtrar('Todos', this)">Todos</button>
+      <button class="filtro-btn" onclick="filtrar('Portero', this)">Porteros</button>
+      <button class="filtro-btn" onclick="filtrar('Defensa', this)">Defensas</button>
+      <button class="filtro-btn" onclick="filtrar('Centrocampista', this)">Centrocampistas</button>
+      <button class="filtro-btn" onclick="filtrar('Delantero', this)">Delanteros</button>
+    </div>
+
+    <div class="empty" th:if="${#lists.isEmpty(jugadores)}">No hay jugadores registrados para este país.</div>
+
+    <div class="grid" id="grid" th:unless="${#lists.isEmpty(jugadores)}">
+      <div class="card" th:each="j : ${jugadores}" th:data-posicion="${j.posicion}">
+        <div class="card-avatar">
+          <span class="card-dorsal-big" th:text="${j.dorsal}">10</span>
+          <img th:data-nombre="${j.nombre}" alt=""/>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <div class="card-name" th:text="${j.nombre}">Nombre</div>
+            <div class="card-num" th:text="'#' + ${j.dorsal}">10</div>
+          </div>
+          <div class="card-pos" th:text="${j.posicion}">Posición</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>FIFA World Cup 2026 · API de examen</footer>
+  </div>
+
+  <script>
+    const flagEmojis = ['🇪🇸','🇦🇷','🇧🇷','🇫🇷','🇩🇪','🇵🇹','🇬🇧','🇳🇱','🇲🇦','🇯🇵','🇺🇸','🇲🇽','🇺🇾','🇨🇴','🇸🇳'];
+    const container = document.getElementById('flags');
+    function spawnFlag() {
+      const el = document.createElement('span');
+      el.className = 'flag';
+      el.textContent = flagEmojis[Math.floor(Math.random() * flagEmojis.length)];
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.fontSize = (2 + Math.random() * 2.5) + 'rem';
+      const dur = 14 + Math.random() * 14;
+      el.style.animationDuration = dur + 's';
+      container.appendChild(el);
+      setTimeout(() => el.remove(), dur * 1000);
+    }
+    for (let i = 0; i < 10; i++) setTimeout(spawnFlag, Math.random() * 6000);
+    setInterval(spawnFlag, 1500);
+
+    async function cargarFoto(img) {
+      const nombre = img.dataset.nombre;
+      const titulo = nombre.replace(/ /g, '_');
+      try {
+        const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(titulo)}&prop=pageimages&piprop=thumbnail&pithumbsize=300&format=json&origin=*&redirects=1`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const page = Object.values(data.query.pages)[0];
+        if (page.thumbnail?.source) {
+          img.src = page.thumbnail.source;
+          img.onload = () => img.classList.add('loaded');
+        }
+      } catch(e) {}
+    }
+    document.querySelectorAll('.card-avatar img[data-nombre]').forEach(cargarFoto);
+
+    function filtrar(posicion, btn) {
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.card').forEach(card => {
+        card.style.display = (posicion === 'Todos' || card.dataset.posicion === posicion) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

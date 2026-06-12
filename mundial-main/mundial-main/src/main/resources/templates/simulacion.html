@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulación Mundial 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --gold: #f0c040; --card-bg: rgba(10,46,26,0.88); --border: rgba(255,255,255,0.15); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; font-family: 'Barlow', sans-serif; color: #fff; background: #0a3d1f; position: relative; overflow-x: hidden; }
+
+    .field-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: linear-gradient(180deg, #0a3d1f 0%, #0d4f28 50%, #0a3d1f 100%);
+    }
+    .field-bg::before {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(180deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 40px, transparent 40px, transparent 80px);
+    }
+    .flags { position: absolute; inset: 0; pointer-events: none; }
+    .flag { position: absolute; font-size: 3rem; opacity: 0.12; animation: floatFlag linear infinite; user-select: none; }
+    @keyframes floatFlag {
+      0%   { transform: translateY(110vh) rotate(-8deg); opacity: 0; }
+      10%  { opacity: 0.12; }
+      90%  { opacity: 0.12; }
+      100% { transform: translateY(-15vh) rotate(8deg); opacity: 0; }
+    }
+
+    /* Fuegos artificiales */
+    .fireworks { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+    .firework {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+    .particle {
+      position: absolute;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      animation: particle-fly linear forwards;
+    }
+    @keyframes particle-fly {
+      0%   { transform: translate(0,0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    }
+
+    .content { position: relative; z-index: 1; }
+
+    header {
+      text-align: center; padding: 3rem 1rem 2rem;
+      background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border); backdrop-filter: blur(2px);
+    }
+    header h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem,6vw,5rem); letter-spacing: .08em; color: var(--gold); text-shadow: 0 0 30px rgba(240,192,64,0.4), 0 4px 8px rgba(0,0,0,0.8); }
+    header p { color: rgba(255,255,255,0.5); font-size: .85rem; letter-spacing: .15em; text-transform: uppercase; margin-top: .4rem; }
+
+    .nav { text-align: center; padding: 1rem; }
+    .nav a { color: var(--gold); text-decoration: none; font-size: .85rem; letter-spacing: .1em; text-transform: uppercase; border: 1px solid rgba(240,192,64,0.3); padding: .4rem 1rem; border-radius: 4px; background: rgba(10,46,26,0.6); backdrop-filter: blur(4px); }
+    .nav a:hover { border-color: var(--gold); background: rgba(45,138,80,0.3); }
+
+    .fase { max-width: 1100px; margin: 2.5rem auto; padding: 0 1.5rem; }
+    .fase h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; letter-spacing: .1em; color: var(--gold); border-left: 4px solid var(--gold); padding-left: .75rem; margin-bottom: 1.2rem; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+
+    .partidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 1rem; }
+    .partido { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; backdrop-filter: blur(8px); transition: border-color .2s; }
+    .partido:hover { border-color: rgba(240,192,64,0.4); }
+    .partido-equipos { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .equipo { font-weight: 600; font-size: .95rem; flex: 1; }
+    .equipo.ganador { color: var(--gold); }
+    .equipo.perdedor { color: rgba(255,255,255,0.25); text-decoration: line-through; }
+    .equipo.local { text-align: left; }
+    .equipo.visitante { text-align: right; }
+    .marcador { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: #fff; letter-spacing: .1em; white-space: nowrap; }
+
+    .final-card { max-width: 480px; margin: 0 auto; background: linear-gradient(135deg, rgba(240,192,64,0.12), rgba(10,46,26,0.95)); border: 2px solid var(--gold); border-radius: 16px; padding: 2rem; text-align: center; backdrop-filter: blur(10px); }
+    .final-card .partido-equipos { justify-content: center; gap: 1.5rem; }
+    .final-card .equipo { font-size: 1.1rem; }
+    .final-card .marcador { font-size: 2rem; color: var(--gold); }
+
+    .campeon { text-align: center; padding: 3rem 1rem 4rem; }
+    .campeon-titulo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3.5rem, 9vw, 8rem);
+      color: var(--gold); letter-spacing: .1em;
+      text-shadow: 0 0 60px rgba(240,192,64,0.6), 0 4px 12px rgba(0,0,0,0.8);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    .campeon-sub { font-size: 1rem; color: rgba(255,255,255,0.4); letter-spacing: .2em; text-transform: uppercase; margin-top: .75rem; }
+    @keyframes glow {
+      from { text-shadow: 0 0 20px rgba(240,192,64,0.4), 0 4px 12px rgba(0,0,0,0.8); }
+      to   { text-shadow: 0 0 80px rgba(240,192,64,1), 0 0 120px rgba(240,192,64,0.5), 0 4px 12px rgba(0,0,0,0.8); }
+    }
+
+    footer { text-align: center; padding: 2rem; color: rgba(255,255,255,0.15); font-size: .8rem; letter-spacing: .1em; }
+  </style>
+</head>
+<body>
+  <div class="field-bg">
+    <div class="flags" id="flags"></div>
+  </div>
+  <div class="fireworks" id="fireworks"></div>
+
+  <div class="content">
+    <header>
+      <h1>Simulación Mundial 2026</h1>
+      <p>Fase eliminatoria · Resultados generados automáticamente</p>
+    </header>
+    <div class="nav"><a href="/">← Volver al inicio</a></div>
+
+    <div class="fase">
+      <h2>Octavos de Final</h2>
+      <div class="partidos">
+        <div class="partido" th:each="p : ${octavos}">
+          <div class="partido-equipos">
+            <span class="equipo local"     th:classappend="${p.ganador == p.local}     ? ' ganador' : ' perdedor'" th:text="${p.local}">Local</span>
+            <span class="marcador"         th:text="${p.resultado}">0-0</span>
+            <span class="equipo visitante" th:classappend="${p.ganador == p.visitante} ? ' ganador' : ' perdedor'" th:text="${p.visitante}">Visitante</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fase">
+      <h2>Cuartos de Final</h2>
+      <div class="partidos">
+        <div class="partido" th:each="p : ${cuartos}">
+          <div class="partido-equipos">
+            <span class="equipo local"     th:classappend="${p.ganador == p.local}     ? ' ganador' : ' perdedor'" th:text="${p.local}">Local</span>
+            <span class="marcador"         th:text="${p.resultado}">0-0</span>
+            <span class="equipo visitante" th:classappend="${p.ganador == p.visitante} ? ' ganador' : ' perdedor'" th:text="${p.visitante}">Visitante</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fase">
+      <h2>Semifinales</h2>
+      <div class="partidos">
+        <div class="partido" th:each="p : ${semifinales}">
+          <div class="partido-equipos">
+            <span class="equipo local"     th:classappend="${p.ganador == p.local}     ? ' ganador' : ' perdedor'" th:text="${p.local}">Local</span>
+            <span class="marcador"         th:text="${p.resultado}">0-0</span>
+            <span class="equipo visitante" th:classappend="${p.ganador == p.visitante} ? ' ganador' : ' perdedor'" th:text="${p.visitante}">Visitante</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fase">
+      <h2>Final</h2>
+      <div class="final-card">
+        <div class="partido-equipos">
+          <span class="equipo local"     th:classappend="${finalPartido.ganador == finalPartido.local}     ? ' ganador' : ' perdedor'" th:text="${finalPartido.local}">Local</span>
+          <span class="marcador"         th:text="${finalPartido.resultado}">0-0</span>
+          <span class="equipo visitante" th:classappend="${finalPartido.ganador == finalPartido.visitante} ? ' ganador' : ' perdedor'" th:text="${finalPartido.visitante}">Visitante</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="campeon">
+      <div class="campeon-titulo" th:text="${campeon}">🏆 España</div>
+      <div class="campeon-sub">Campeón del Mundo · FIFA World Cup 2026</div>
+    </div>
+
+    <div style="text-align:center; padding: 1rem 1rem 3rem;">
+      <button onclick="window.scrollTo(0,0); window.location.reload();" style="
+        font-family:'Bebas Neue',sans-serif;
+        font-size:1.4rem;
+        letter-spacing:.1em;
+        color:#0a3d1f;
+        background:var(--gold);
+        border:none;
+        border-radius:10px;
+        padding:.75rem 2.5rem;
+        cursor:pointer;
+        box-shadow: 0 0 24px rgba(240,192,64,0.4);
+        transition: transform .15s, box-shadow .15s;
+      " onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 0 40px rgba(240,192,64,0.7)'"
+         onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 0 24px rgba(240,192,64,0.4)'">
+        🔄 Volver a simular
+      </button>
+    </div>
+
+    <footer>FIFA World Cup 2026 · API de examen · Spring Boot 3 + Java 21</footer>
+  </div>
+
+  <script>
+    /* ── Banderas flotantes ── */
+    const flagEmojis = ['🇪🇸','🇦🇷','🇧🇷','🇫🇷','🇩🇪','🇵🇹','🇬🇧','🇳🇱','🇲🇦','🇯🇵','🇺🇸','🇲🇽','🇺🇾','🇨🇴','🇸🇳'];
+    const flagContainer = document.getElementById('flags');
+    function spawnFlag() {
+      const el = document.createElement('span');
+      el.className = 'flag';
+      el.textContent = flagEmojis[Math.floor(Math.random() * flagEmojis.length)];
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.fontSize = (2 + Math.random() * 2.5) + 'rem';
+      const dur = 14 + Math.random() * 14;
+      el.style.animationDuration = dur + 's';
+      flagContainer.appendChild(el);
+      setTimeout(() => el.remove(), dur * 1000);
+    }
+    for (let i = 0; i < 10; i++) setTimeout(spawnFlag, Math.random() * 6000);
+    setInterval(spawnFlag, 1500);
+
+    /* ── Fuegos artificiales ── */
+    const fw = document.getElementById('fireworks');
+    const colors = ['#f0c040','#ff4444','#44aaff','#ff44aa','#44ffaa','#ffffff','#ff8800','#aa44ff'];
+
+    function burst(x, y) {
+      const count = 28 + Math.floor(Math.random() * 16);
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const angle = (i / count) * Math.PI * 2;
+        const dist  = 60 + Math.random() * 100;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist - 30;
+        const dur = 0.6 + Math.random() * 0.7;
+        p.style.cssText = `
+          left:${x}px; top:${y}px;
+          background:${colors[Math.floor(Math.random()*colors.length)]};
+          width:${3 + Math.random()*4}px; height:${3 + Math.random()*4}px;
+          --tx:${tx}px; --ty:${ty}px;
+          animation-duration:${dur}s;
+          box-shadow: 0 0 6px currentColor;
+        `;
+        fw.appendChild(p);
+        setTimeout(() => p.remove(), dur * 1000);
+      }
+    }
+
+    function randomBurst() {
+      const x = 80 + Math.random() * (window.innerWidth  - 160);
+      const y = 60 + Math.random() * (window.innerHeight * 0.6);
+      burst(x, y);
+      const next = 400 + Math.random() * 900;
+      setTimeout(randomBurst, next);
+    }
+
+    /* Arrancar fuegos al llegar al campeón */
+    const campeonEl = document.querySelector('.campeon');
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        randomBurst();
+        observer.disconnect();
+      }
+    }, { threshold: 0.3 });
+    observer.observe(campeonEl);
+  </script>
+</body>
+</html>

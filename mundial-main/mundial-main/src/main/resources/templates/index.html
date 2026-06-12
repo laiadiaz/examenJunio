@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mundial 2026 API</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --gold: #f0c040; --card-bg: rgba(10,46,26,0.85); --border: rgba(255,255,255,0.15); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; font-family: 'Barlow', sans-serif; color: #fff; background: #0a3d1f; position: relative; overflow-x: hidden; padding-bottom: 100px; }
+
+    .field-bg { position: fixed; inset: 0; z-index: 0; background: linear-gradient(180deg, #0a3d1f 0%, #0d4f28 50%, #0a3d1f 100%); overflow: hidden; }
+    .field-bg::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 40px, transparent 40px, transparent 80px); }
+    .center-circle { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 300px; height: 300px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.05); }
+    .mid-line { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.04); }
+    .flags { position: absolute; inset: 0; pointer-events: none; }
+    .flag { position: absolute; font-size: 3.5rem; opacity: 0.18; animation: floatFlag linear infinite; user-select: none; }
+    @keyframes floatFlag { 0% { transform:translateY(110vh) rotate(-10deg); opacity:0; } 10% { opacity:0.18; } 90% { opacity:0.18; } 100% { transform:translateY(-15vh) rotate(10deg); opacity:0; } }
+
+    .content { position: relative; z-index: 1; }
+
+    header { text-align: center; padding: 4rem 1rem 3rem; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%); border-bottom: 1px solid var(--border); backdrop-filter: blur(2px); }
+    .trophy { font-size: 5rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px rgba(240,192,64,0.6)); }
+    header h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem,8vw,7rem); letter-spacing: .1em; color: var(--gold); text-shadow: 0 0 40px rgba(240,192,64,0.4), 0 4px 8px rgba(0,0,0,0.8); line-height: 1; }
+    header p { color: rgba(255,255,255,0.6); font-size: .9rem; letter-spacing: .2em; text-transform: uppercase; margin-top: .8rem; }
+
+    .section { max-width: 1050px; margin: 3rem auto; padding: 0 2rem; }
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: .1em; color: var(--gold); border-left: 4px solid var(--gold); padding-left: .75rem; margin-bottom: 1.5rem; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+
+    .equipos { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 1rem; }
+    .equipo-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem 1rem; text-align: center; text-decoration: none; color: #fff; transition: transform .2s, border-color .2s, background .2s; backdrop-filter: blur(8px); }
+    .equipo-card:hover { transform: translateY(-6px); border-color: var(--gold); background: rgba(45,138,80,0.5); }
+    .equipo-flag { font-size: 3rem; margin-bottom: .75rem; display: block; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
+    .equipo-nombre { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: .06em; color: var(--gold); }
+    .equipo-jugadores { font-size: .75rem; color: rgba(255,255,255,0.45); margin-top: .3rem; letter-spacing: .08em; }
+
+    .sim-card { background: linear-gradient(135deg, rgba(240,192,64,0.15), rgba(10,46,26,0.9)); border: 2px solid var(--gold); border-radius: 16px; padding: 2.5rem; text-align: center; text-decoration: none; display: block; transition: transform .2s; backdrop-filter: blur(8px); }
+    .sim-card:hover { transform: translateY(-4px); background: linear-gradient(135deg, rgba(240,192,64,0.25), rgba(10,46,26,0.9)); }
+    .sim-card h3 { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--gold); letter-spacing: .08em; text-shadow: 0 0 20px rgba(240,192,64,0.4); }
+    .sim-card p { color: rgba(255,255,255,0.5); font-size: .85rem; margin-top: .5rem; }
+
+    .endpoints { display: flex; flex-direction: column; gap: .75rem; }
+    .endpoint { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; text-decoration: none; transition: border-color .2s; backdrop-filter: blur(8px); }
+    .endpoint:hover { border-color: var(--gold); }
+    .method { font-family: 'Bebas Neue', sans-serif; font-size: .9rem; background: rgba(240,192,64,0.15); color: var(--gold); padding: .2rem .7rem; border-radius: 4px; letter-spacing: .05em; flex-shrink: 0; border: 1px solid rgba(240,192,64,0.3); }
+    .endpoint-path { font-family: monospace; font-size: .9rem; color: rgba(255,255,255,0.8); }
+    .endpoint-desc { font-size: .8rem; color: rgba(255,255,255,0.35); margin-top: .2rem; }
+
+    footer { text-align: center; padding: 3rem; color: rgba(255,255,255,0.2); font-size: .8rem; letter-spacing: .1em; }
+
+    /* ── Futbolista ── */
+    .player-track {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 90px;
+      pointer-events: none;
+      z-index: 10;
+      overflow: hidden;
+    }
+    .player-track::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+    }
+    /* El wrap contiene: jugador SVG + balón a su derecha (delante) */
+    .player-wrap {
+      position: absolute;
+      bottom: 4px;
+      display: flex;
+      align-items: flex-end;
+      gap: 0px;
+      animation: playerRun 10s linear infinite;
+    }
+    @keyframes playerRun {
+      0%   { left: -90px; }
+      100% { left: calc(100vw + 20px); }
+    }
+
+    .player-svg { width: 52px; height: 74px; }
+
+    /* Pierna trasera con bota como grupo */
+    #groupLegB { transform-origin: 27px 49px; animation: legBack 0.3s ease-in-out infinite alternate; }
+    @keyframes legBack {
+      from { transform: rotate(-18deg); }
+      to   { transform: rotate(22deg);  }
+    }
+    /* Pierna delantera con bota como grupo */
+    #groupLegF { transform-origin: 33px 49px; animation: legFwd 0.3s ease-in-out infinite alternate; }
+    @keyframes legFwd {
+      from { transform: rotate(22deg);  }
+      to   { transform: rotate(-18deg); }
+    }
+    /* Brazos en oposición */
+    #armB { transform-origin: 22px 26px; animation: armBack 0.3s ease-in-out infinite alternate; }
+    @keyframes armBack {
+      from { transform: rotate(-20deg); }
+      to   { transform: rotate(20deg);  }
+    }
+    #armF { transform-origin: 38px 26px; animation: armFwd 0.3s ease-in-out infinite alternate; }
+    @keyframes armFwd {
+      from { transform: rotate(20deg);  }
+      to   { transform: rotate(-20deg); }
+    }
+    /* Cuerpo con leve rebote vertical */
+    #body-group { animation: bodyBounce 0.3s ease-in-out infinite alternate; }
+    @keyframes bodyBounce {
+      from { transform: translateY(0);    }
+      to   { transform: translateY(-3px); }
+    }
+
+    .ball {
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+      margin-left: -6px;
+      display: inline-block;
+      animation: ballBounce 0.3s ease-in-out infinite alternate, ballSpin 0.9s linear infinite;
+    }
+    @keyframes ballBounce { from { transform: translateY(0);     } to { transform: translateY(-8px); } }
+    @keyframes ballSpin   { from { transform: rotate(0deg);      } to { transform: rotate(360deg);   } }
+  </style>
+</head>
+<body>
+  <div class="field-bg">
+    <div class="mid-line"></div>
+    <div class="center-circle"></div>
+    <div class="flags" id="flags"></div>
+  </div>
+
+  <div class="content">
+    <header>
+      <div class="trophy">⚽</div>
+      <h1>Mundial 2026</h1>
+      <p>Estados Unidos · México · Canadá &nbsp;·&nbsp; 11 Jun – 19 Jul</p>
+    </header>
+
+    <div class="section">
+      <div class="section-title">Selecciones</div>
+      <div class="equipos">
+        <a href="/seleccion/España"    class="equipo-card"><span class="equipo-flag">🇪🇸</span><div class="equipo-nombre">España</div><div class="equipo-jugadores">26 jugadores · Grupo H</div></a>
+        <a href="/seleccion/Argentina" class="equipo-card"><span class="equipo-flag">🇦🇷</span><div class="equipo-nombre">Argentina</div><div class="equipo-jugadores">26 jugadores · Grupo J</div></a>
+        <a href="/seleccion/Brasil"    class="equipo-card"><span class="equipo-flag">🇧🇷</span><div class="equipo-nombre">Brasil</div><div class="equipo-jugadores">26 jugadores · Grupo C</div></a>
+        <a href="/seleccion/Francia"   class="equipo-card"><span class="equipo-flag">🇫🇷</span><div class="equipo-nombre">Francia</div><div class="equipo-jugadores">26 jugadores · Grupo I</div></a>
+        <a href="/seleccion/Alemania"  class="equipo-card"><span class="equipo-flag">🇩🇪</span><div class="equipo-nombre">Alemania</div><div class="equipo-jugadores">26 jugadores · Grupo E</div></a>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Simulación</div>
+      <a href="/simulacion" class="sim-card">
+        <h3>🏆 Simular el Mundial</h3>
+        <p>Genera los resultados de la fase eliminatoria completa · ¿Quién ganará?</p>
+      </a>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Endpoints API</div>
+      <div class="endpoints">
+        <a href="/api/jugadores" class="endpoint">
+          <span class="method">GET</span>
+          <div><div class="endpoint-path">/api/jugadores</div><div class="endpoint-desc">Lista completa de jugadores en JSON</div></div>
+        </a>
+        <a href="/api/grupos" class="endpoint">
+          <span class="method">GET</span>
+          <div><div class="endpoint-path">/api/grupos</div><div class="endpoint-desc">Los 12 grupos del Mundial 2026 en JSON</div></div>
+        </a>
+      </div>
+    </div>
+
+    <footer>FIFA World Cup 2026 · API de examen · Spring Boot 3 + Java 21</footer>
+  </div>
+
+  <!-- Futbolista de perfil corriendo con balón delante -->
+  <div class="player-track">
+    <div class="player-wrap">
+      <!-- SVG futbolista de perfil mirando a la derecha (hacia donde corre) -->
+      <svg class="player-svg" viewBox="0 0 50 80" xmlns="http://www.w3.org/2000/svg">
+        <g id="body-group">
+          <!-- cabeza de perfil mirando derecha -->
+          <ellipse cx="33" cy="12" rx="8" ry="9" fill="#f5c5a3"/>
+          <!-- pelo -->
+          <ellipse cx="33" cy="4"  rx="8" ry="5" fill="#2c1810"/>
+          <!-- nariz apuntando a la derecha -->
+          <ellipse cx="40" cy="13" rx="2" ry="1.5" fill="#e8a882"/>
+          <!-- ojo -->
+          <circle cx="38" cy="10" r="1.3" fill="#1a0a00"/>
+          <!-- cuello -->
+          <rect x="29" y="20" width="7" height="4" fill="#f5c5a3"/>
+          <!-- cuerpo camiseta roja -->
+          <rect x="22" y="23" width="16" height="20" rx="3" fill="#c0392b"/>
+          <!-- número 10 -->
+          <text x="30" y="37" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif" font-weight="bold">10</text>
+          <!-- brazo trasero (izquierdo, hacia atrás) -->
+          <line id="armB" x1="22" y1="26" x2="13" y2="37" stroke="#f5c5a3" stroke-width="4" stroke-linecap="round"/>
+          <!-- brazo delantero (derecho, hacia adelante) -->
+          <line id="armF" x1="38" y1="26" x2="46" y2="36" stroke="#f5c5a3" stroke-width="4" stroke-linecap="round"/>
+          <!-- pantalón corto -->
+          <rect x="22" y="41" width="16" height="8" rx="2" fill="#1a252f"/>
+          <!-- pierna trasera + bota como grupo -->
+          <g id="groupLegB">
+            <line x1="27" y1="49" x2="21" y2="66" stroke="#1a252f" stroke-width="6" stroke-linecap="round"/>
+            <rect x="15" y="63" width="12" height="5" rx="2.5" fill="#922b21"/>
+          </g>
+          <!-- pierna delantera + bota como grupo -->
+          <g id="groupLegF">
+            <line x1="33" y1="49" x2="41" y2="62" stroke="#2c3e50" stroke-width="6" stroke-linecap="round"/>
+            <rect x="36" y="59" width="13" height="5" rx="2.5" fill="#c0392b"/>
+          </g>
+        </g>
+      </svg>
+      <!-- Balón delante del jugador -->
+      <div class="ball">⚽</div>
+    </div>
+  </div>
+
+  <script>
+    const flags = ['🇪🇸','🇦🇷','🇧🇷','🇫🇷','🇩🇪','🇵🇹','🇬🇧','🇳🇱','🇧🇪','🇭🇷','🇲🇦','🇯🇵','🇺🇸','🇲🇽','🇨🇦','🇺🇾','🇨🇴','🇸🇳','🇦🇺','🇰🇷'];
+    const container = document.getElementById('flags');
+    function spawnFlag() {
+      const el = document.createElement('span');
+      el.className = 'flag';
+      el.textContent = flags[Math.floor(Math.random() * flags.length)];
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.fontSize = (2.5 + Math.random() * 3) + 'rem';
+      const dur = 12 + Math.random() * 16;
+      el.style.animationDuration = dur + 's';
+      container.appendChild(el);
+      setTimeout(() => el.remove(), dur * 1000);
+    }
+    for (let i = 0; i < 14; i++) setTimeout(spawnFlag, Math.random() * 8000);
+    setInterval(spawnFlag, 1200);
+  </script>
+</body>
+</html>

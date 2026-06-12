@@ -1,0 +1,14 @@
+[
+  { "nombre": "Grupo A", "paises": ["México", "Sudáfrica", "Corea del Sur", "Chequia"] },
+  { "nombre": "Grupo B", "paises": ["Canadá", "Suiza", "Catar", "Bosnia y Herzegovina"] },
+  { "nombre": "Grupo C", "paises": ["Brasil", "Marruecos", "Haití", "Escocia"] },
+  { "nombre": "Grupo D", "paises": ["Estados Unidos", "Paraguay", "Australia", "Turquía"] },
+  { "nombre": "Grupo E", "paises": ["Alemania", "Curazao", "Costa de Marfil", "Ecuador"] },
+  { "nombre": "Grupo F", "paises": ["Países Bajos", "Japón", "Túnez", "Suecia"] },
+  { "nombre": "Grupo G", "paises": ["Bélgica", "Egipto", "Irán", "Nueva Zelanda"] },
+  { "nombre": "Grupo H", "paises": ["España", "Cabo Verde", "Arabia Saudí", "Uruguay"] },
+  { "nombre": "Grupo I", "paises": ["Francia", "Senegal", "Noruega", "Irak"] },
+  { "nombre": "Grupo J", "paises": ["Argentina", "Argelia", "Austria", "Jordania"] },
+  { "nombre": "Grupo K", "paises": ["Portugal", "Colombia", "Uzbekistán", "R.D. del Congo"] },
+  { "nombre": "Grupo L", "paises": ["Inglaterra", "Croacia", "Ghana", "Panamá"] }
+]
